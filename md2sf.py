@@ -16,7 +16,7 @@ class sf_html_render(mistune.HTMLRenderer):
 
     def codespan(self, text):
         """override the default `code` block handler"""
-        return '<code style="font-size:1em;color:#00f;">' + escape(text) + "</code>"
+        return '<em>' + escape(text) + "</em>"
 
     def paragraph(self, text):
         """override the default paragraph handler"""
