@@ -48,6 +48,10 @@ class sf_html_render(mistune.HTMLRenderer):
             info = info.strip()
         return html + ">" + escape(code) + "</pre>\n"
 
+    def heading(self, text, level, **attrs):
+        """Not to use h1 stuff as per styling guide"""
+        return '<b>' + text + '</b><br />\n'
+
 
 @click.command(help="Plese supply the path to a KB article in Markdown format to parse")
 @click.argument("filename", type=click.Path(exists=True, readable=True), nargs=1)
