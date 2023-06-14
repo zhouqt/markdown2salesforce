@@ -2,11 +2,13 @@ FROM python:alpine
 
 WORKDIR /app
 
-COPY *.py requirements.txt ./
+COPY requirements.txt ./
 
 RUN apk add libmagic && \
   pip install -r requirements.txt
 
-ENTRYPOINT ["./md2sf.py"]
+COPY md2sf.py /usr/local/bin
+
+ENTRYPOINT ["/usr/local/bin/md2sf.py"]
 
 
