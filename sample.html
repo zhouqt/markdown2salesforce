@@ -1,0 +1,89 @@
+<p style='margin-top: 15px;'><b>The second <code style="font-size:1em;color:#00f;">Functor</code> law is redundant</b></p>
+<p>Basic Haskell teaches that instances of <code style="font-size:1em;color:#00f;">Functor</code> should satisfy</p>
+<pre class="ckeditor_codeblock">fmap id = id                   -- fmap preserves identity
+fmap f . fmap g = fmap (f . g) -- fmap distributes over composition
+</pre>
+<p>However, Haskell's type system is special in a way that makes the second law
+follow from the first one. The values of <em>every</em> type follow a certain law;
+this law is called the free theorem of that type. For example, the free theorem
+of <code style="font-size:1em;color:#00f;">f :: [a] -&gt; [a]</code> is</p>
+<pre class="ckeditor_codeblock">map g . f  = f . map g
+</pre>
+<p>This means that any function <code style="font-size:1em;color:#00f;">f</code> of type <code style="font-size:1em;color:#00f;">[a] -&gt; [a]</code> commutes with <code style="font-size:1em;color:#00f;">map</code>;
+for example one can choose <code style="font-size:1em;color:#00f;">f = reverse</code>, and then the law reads</p>
+<pre class="ckeditor_codeblock">map g . reverse = reverse . map g
+</pre>
+<p>This holds for all <code style="font-size:1em;color:#00f;">g</code>; so from the type of <code style="font-size:1em;color:#00f;">f</code> alone, one can deduce that
+we can rearrange it in a chain of <code style="font-size:1em;color:#00f;">map</code>s to be in any place we want.
+Pretty cool how something like that can be derived from a type alone!</p>
+<p>Similarly, you can generate the free theorem for <code style="font-size:1em;color:#00f;">fmap</code>, which reads</p>
+<pre class="ckeditor_codeblock">        f .      g =      p .      q -- (1) Given this ...
+=&gt; fmap f . fmap g = fmap p . fmap q -- (2) ... this holds
+</pre>
+<p>In other words, this says that whenever functions compose, fmapping all of them
+still composes.</p>
+<p>Now choose <code style="font-size:1em;color:#00f;">p = id</code> and <code style="font-size:1em;color:#00f;">q = f . g</code>. (1) clearly holds in this case, so we can
+derive</p>
+<pre class="ckeditor_codeblock">  fmap f . fmap g
+= fmap id . fmap (f . g)
+= id . fmap (f . g)      -- by the first functor law
+= fmap (f . g)
+</pre>
+<p>This is precisely the second Functor law,</p>
+<pre class="ckeditor_codeblock">fmap f . fmap g = fmap (f . g)
+</pre>
+<p>Note how we used nothing but <code style="font-size:1em;color:#00f;">fmap</code>'s type (to generate the free theorem) and
+the first <code style="font-size:1em;color:#00f;">Functor</code> law (to eliminate <code style="font-size:1em;color:#00f;">fmap id</code>) to derive this.</p>
+<p style='margin-top: 15px;'><b>Bottom ruins the party</b></p>
+<p><a href="http://www.cse.chalmers.se/~nad/publications/danielsson-et-al-popl2006.html">It is worth mentioning that this only holds up to fast and loose reasoning,
+i.e. assuming no ⊥ are involved</a>, otherwise e.g.</p>
+<pre class="ckeditor_codeblock">newtype Id a = Id a
+
+instance Functor Id where
+      fmap f x = f `seq` x `seq` (Id . f . runId) x
+</pre>
+<p>satisfies the first, but not the second, Functor law:</p>
+<pre class="ckeditor_codeblock">fmap id x = id `seq` x `seq` (Id . id . runId) x
+          = id `seq` (x `seq` (Id . id . runId) x) -- seq is infixr 0
+          = x `seq` (Id . runId) x
+          = x `seq` x
+          = x
+
+-- but
+(fmap (const ()) . fmap ⊥) x
+      = fmap (const ()) (fmap ⊥ x)
+      = fmap (const ()) (⊥ `seq` &lt;stuff&gt;)
+      = fmap (const ()) ⊥
+      = &lt;stuff&gt; `seq` ⊥ `seq` ...
+      = ⊥
+fmap (const () . ⊥) x
+      = (const () . ⊥) `seq` x `seq` (Id . (const ()) . ⊥) . runId) x
+      = const () . ⊥ `seq` (x `seq` (Id . const () . ⊥ . runId) x)
+      = x `seq` (Id . const () . ⊥ . runId) x
+      = x `seq` Id (const () (⊥ (runId x)))
+      = x `seq` Id ()
+      -- This is ⊥ if and only if x is ⊥.
+</pre>
+<p style='margin-top: 15px;'><b>The converse: 2nd law holds, 1st does not</b></p>
+<p>The following hypothetical <code style="font-size:1em;color:#00f;">Functor Maybe</code> satisfies the second, but not the
+first, Functor law:</p>
+<pre class="ckeditor_codeblock">instance Functor Maybe where
+    fmap _ _ = Nothing
+</pre>
+<pre class="ckeditor_codeblock">-- 1st law broken
+fmap id (Just ()) = Nothing
+
+-- 2nd law holds
+fmap f . fmap g = const Nothing . const Nothing = const Nothing
+fmap (f . g) = const Nothing
+</pre>
+<p style='margin-top: 15px;'><b>Further reading</b></p>
+<p>If you want to know more about free theorems or just play around with them:</p>
+<ul>
+<li>There is also an <a href="https://www.fpcomplete.com/user/edwardk/snippets/fmap">article by Edward Kmett on free theorems</a>
+that you might like.</li>
+<li><a href="http://www-ps.iai.uni-bonn.de/cgi-bin/free-theorems-webui.cgi">Online free theorem generator</a> (make sure to &quot;hide type
+instantiations&quot;; the free theorem is displayed in the very last box in a
+somewhat readable format)</li>
+<li><a href="http://homepages.inf.ed.ac.uk/wadler/papers/free/free.ps">Theorems for free!</a>, the original publication on free theorems</li>
+</ul>

@@ -31,5 +31,14 @@ sample.md
 Take that HTML and paste it into the Salesforce KB form under the "Source" view mode, then click "Source" again on that form to get Salesforce to re-render in its own format, suitable for saving.
 
 
-
 That's it!
+
+# Use it in a docker container
+
+```
+docker build -t md2kb .
+
+alias md2kb="docker run -ti --rm --mount type=bind,source=.,destination=/app -w /app -u $UID:$GID md2kb"
+
+md2kb sample.md
+```
